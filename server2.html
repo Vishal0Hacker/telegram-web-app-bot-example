@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRACKERBOY PREDICTOR</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: black; /* Set a fallback background color */
+        }
+
+        video#backgroundVideo {
+            position: fixed;
+            top: 0;
+            left: 0;
+            min-width: 100%;
+            min-height: 100%;
+            z-index: -1;
+            object-fit: cover; /* Ensure the video covers the entire background */
+        }
+
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #00cc00; /* Brighter green border for card */
+            background-color: transparent; /* Fully transparent background for card */
+        }
+
+        #predictionResult {
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            color: #00cc00; /* Brighter text color */
+            border: 2px solid #00cc00; /* Brighter green border around prediction result */
+        }
+
+        table {
+            width: 50%;
+            border-collapse: collapse;
+            margin: 20px auto;
+            background-color: transparent;
+            color: #00cc00;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #00cc00;
+            font-weight: bold;
+            font-style: italic;
+        }
+
+        th {
+            background-color: transparent;
+        }
+
+        td {
+            background-color: transparent;
+        }
+
+        tr:hover td {
+            background-color: rgba(0, 255, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            th, td {
+                padding: 8px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            th, td {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background video -->
+    <video id="backgroundVideo" autoplay muted loop>
+        <source src="video.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
+    <div class="card">
+        <div id="predictionResult"></div>
+        <h2>Latest Data</h2>
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>Issue Number</th>
+                    <th>Number</th>
+                    <th>Colour</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data rows will be inserted here dynamically by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const requestData = {
+            pageSize: 10,
+            pageNo: 1,
+            typeId: 1,
+            language: 0,
+            random: "ded40537a2ce416e96c00e5218f6859a",
+            signature: "69306982EEEB19FA940D72EC93C62552",
+            timestamp: 1721383261
+        };
+
+        const fetchNoAverageEmerdList = () => {
+            return fetch('https://api.bdg88zf.com/api/webapi/GetNoaverageEmerdList', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json;charset=UTF-8',
+                    'Accept': 'application/json, text/plain, */*'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .catch(error => console.error('Error fetching no average EMERD list data:', error));
+        };
+
+        const getPredictionDetails = (predictedNumber) => {
+            if ([5, 7, 9].includes(predictedNumber)) {
+                return { category: 'BIG', color: 'green', dot: '🟢' };
+            } else if ([1, 3].includes(predictedNumber)) {
+                return { category: 'SMALL', color: 'green', dot: '🟢' };
+            } else if ([0, 2, 4].includes(predictedNumber)) {
+                return { category: 'SMALL', color: 'red', dot: '🔴' };
+            } else if ([6, 8].includes(predictedNumber)) {
+                return { category: 'BIG', color: 'red', dot: '🔴' };
+            } else {
+                return { category: 'UNKNOWN', color: 'gray', dot: '' };
+            }
+        };
+
+        const updateDataTable = () => {
+            fetchNoAverageEmerdList()
+                .then(data => {
+                    const list = data.data.list;
+                    const tableBody = document.querySelector('#dataTable tbody');
+                    tableBody.innerHTML = ''; // Clear previous data
+                    let lastNumber = null;
+
+                    list.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${item.issueNumber}</td>
+                            <td>${item.number}</td>
+                            <td>${item.colour}</td>
+                        `;
+                        tableBody.appendChild(row);
+
+                        // Store the last number for prediction
+                        lastNumber = Number(item.number);
+                    });
+
+                    predictUpcomingResult(lastNumber);
+                })
+                .catch(error => console.error('Error fetching no average EMERD list data:', error));
+        };
+
+        const predictUpcomingResult = (lastNumber) => {
+            const predictedNumber = (lastNumber + 1) % 10; // Example prediction logic (increment the number and use modulo 10)
+            const { category, color, dot } = getPredictionDetails(predictedNumber);
+
+            // Display the predicted number, dot, and category based on conditions
+            document.getElementById('predictionResult').innerHTML = `
+                <span style="color: ${color}; font-size: 24px; font-weight: bold;">
+                    ${dot} ${category} (${predictedNumber})
+                </span>
+            `;
+        };
+
+        setInterval(updateDataTable, 1000); // Update data every second
+    </script>
+</body>
+</html>
